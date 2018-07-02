@@ -14,6 +14,8 @@ Ground Truth:               |  Prediction:
 
 The UNet was based on this paper: https://arxiv.org/abs/1802.10508 
 
+My presentation for this work is here: [talk](./Brain_Tumor_Segmentation_Talk.pptx)
+
 I heavily modified code from two sources to get this project to work:
 
 - Original code for building the UNet was from this repo: https://github.com/ellisdg/3DUnetCNN
