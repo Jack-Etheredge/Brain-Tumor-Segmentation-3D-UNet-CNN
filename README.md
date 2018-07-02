@@ -16,6 +16,12 @@ The UNet was based on this paper: https://arxiv.org/abs/1802.10508
 
 My presentation for this work is here: [talk](./Brain_Tumor_Segmentation_Talk.pptx)
 
+
+To do:
+- Clean code
+- Add alternative versions for 8xGPU
+- Add alternative versions for on-the-fly image cropping versus pulling from pre-cropped pickle files
+
 I heavily modified code from two sources to get this project to work:
 
 - Original code for building the UNet was from this repo: https://github.com/ellisdg/3DUnetCNN
