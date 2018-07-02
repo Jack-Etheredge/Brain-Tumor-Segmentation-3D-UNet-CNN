@@ -16,6 +16,7 @@ The UNet was based on this paper: https://arxiv.org/abs/1802.10508
 
 My presentation for this work is here: [talk](./Brain_Tumor_Segmentation_Talk.pptx)
 
+Blog post about this project: https://jack-etheredge.github.io/Brain-tumor-segmentation-with-3D-UNet-CNN/
 
 To do:
 - Clean code
