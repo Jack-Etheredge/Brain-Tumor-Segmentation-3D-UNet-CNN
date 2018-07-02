@@ -5,8 +5,12 @@ I used Keras with a Tensorflow backend. This UNet was built for the MICCAI BraTS
 
 I achieved a dice score of 0.78 and weighted dice score of 0.67. I treated both tumor types (LGG and HGG) together. Papers that separate the task for each tumor subtype can perform better with respect to these scores.
 
-![ground truth](./Ground_Truth_Example.png)
-![ground truth](./Prediction_Example.png)
+
+
+
+Ground Truth:               |  Prediction:
+:-------------------------:|:-------------------------:
+![ground truth](./Ground_Truth_Example.png)  |  ![prediction](./Prediction_Example.png)
 
 The UNet was based on this paper: https://arxiv.org/abs/1802.10508 
 
