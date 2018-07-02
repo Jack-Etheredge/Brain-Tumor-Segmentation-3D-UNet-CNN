@@ -9,5 +9,5 @@ The UNet was based on this paper: https://arxiv.org/abs/1802.10508
 
 I heavily modified code from two sources to get this project to work:
 
-Original code for building the UNet was from this repo: https://github.com/ellisdg/3DUnetCNN
-Original code for the data generator: https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the-fly.html
+- Original code for building the UNet was from this repo: https://github.com/ellisdg/3DUnetCNN
+- Original code for the data generator: https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the-fly.html
