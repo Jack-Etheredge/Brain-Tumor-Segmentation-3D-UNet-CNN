@@ -28,11 +28,13 @@ Ground Truth:               |  Prediction:
 :-------------------------:|:-------------------------:
 ![ground truth](./images/Ground_Truth_Example.png)  |  ![prediction](./images/Prediction_Example.png)
 
-
+Here's an example of the correlation between my predictions in a rotating 3D volume plane:
 
 Ground Truth:               |  Prediction:
 :-------------------------:|:-------------------------:
 ![ground truth](./images/groundtruth_rotation_example.gif)  |  ![prediction](./images/prediction_rotation_example.gif)
+
+Reload the page or click each image to see the gif loop again.
 
 The UNet was based on this paper: https://arxiv.org/abs/1802.10508
 
