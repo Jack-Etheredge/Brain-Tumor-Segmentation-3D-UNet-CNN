@@ -13,7 +13,7 @@ The first half of the U-net is effectively a typical convolutional neural networ
 
 Here is the architecture for the 2D U-Net from the original publication mentioned earlier:
 
-![u-net-architecture](./images/u-net-architecture.png){:class="img-responsive"}
+![u-net-architecture](./images/u-net-architecture.png)
 
 There are 3 tumor regions that are being determined in the ground truth and the predictions. From largest to smallest, these are:
 1. Edema^
