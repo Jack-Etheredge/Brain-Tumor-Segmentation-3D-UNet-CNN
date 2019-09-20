@@ -2,69 +2,63 @@
 import pickle
 import numpy as np
 import nibabel as nib
+import pandas as pd
 import os
 from unet_utils import crop_img
 
 def main():
     """
-    Combines the HGG and LGG data and creates a dictionary of their labels.
     This function requires that you've first moved the images from inside each folder within HGG and LGG to a separate directory called "data".
+    Combines the HGG and LGG data and creates a dictionary of their labels called "tumor_type_dict".
+    Creates a train, test, holdout split and stores the train, test, and holdout assignments in a dictionary called "train_val_test_dict".
     """
     #%% [markdown]
     # ### Make the labels and test train dictionaries:
 
     #%%
-    # from glob import glob
-    # paths = glob('/Users/etheredgej/Desktop/MICCAI_BraTS17_Data_Training/train/HGG/*/')
-    # print(paths)
 
-    # first move the 
+    # read survival data
+    survival_data = pd.read_csv('survival_data.csv')
+
+    # make tumor type dictionary:
+    tumor_type_dict = {}
 
     HGG_dir_list = next(os.walk('./HGG/'))[1]
     # print(len(HGG_dir_list))
     LGG_dir_list = next(os.walk('./LGG/'))[1]
     # print(len(LGG_dir_list))
 
-    #%% [markdown]
-    # ### Dictionary for all samples:
+    for patientID in HGG_dir_list+LGG_dir_list:
+    #     print(patientID)
+        if patientID in HGG_dir_list:
+    #         tumor_type_dict[patientID] = "HGG"
+            tumor_type_dict[patientID] = 0
+        elif patientID in LGG_dir_list:
+    #         tumor_type_dict[patientID] = "LGG"
+            tumor_type_dict[patientID] = 1
 
-    #%%
+    # print(len(tumor_type_dict))
+    for patientID in HGG_dir_list+LGG_dir_list:
+        print(tumor_type_dict[patientID])
+    # tumor_type_dict[(HGG_dir_list+LGG_dir_list)[0]]
+
     completelist = HGG_dir_list + LGG_dir_list
-
-
-    #%%
-    # completelist = HGG_dir_list + LGG_dir_list
-
-    # completelist = list(survival_data.Brats17ID.copy())
-
     # print(completelist[0:4])
     np.random.shuffle(completelist) # shuffles in place
     # print(completelist[0:4])
 
-    partition={}
+    train_val_test_dict={}
 
     holdout_percentage=0.15
-    partition['holdout']=completelist[0:int(len(completelist)*holdout_percentage)]
+    train_val_test_dict['holdout']=completelist[0:int(len(completelist)*holdout_percentage)]
     trainlist=completelist[int(len(completelist)*holdout_percentage):len(completelist)]
 
     train_percentage=0.7
-    partition['train']=trainlist[0:int(len(trainlist)*train_percentage)]
-    partition['test']=trainlist[int(len(trainlist)*train_percentage):len(trainlist)]
+    train_val_test_dict['train']=trainlist[0:int(len(trainlist)*train_percentage)]
+    train_val_test_dict['test']=trainlist[int(len(trainlist)*train_percentage):len(trainlist)]
 
-    labels={}
-    # HGG=0
-    # LGG=1
-    for directory in HGG_dir_list:
-        labels[directory]=0
-    for directory in LGG_dir_list:
-        labels[directory]=1
-        
-    # print(len(partition['holdout']))
-    # print(len(partition['train']))
-    # print(len(partition['test']))
-
-    pickle.dump( labels, open( "./data/labels.pkl", "wb" ) )
-    pickle.dump( partition, open( "./data/partition.pkl", "wb" ) )
+    pickle.dump( labels, open( "./data/tumor_type_dict.pkl", "wb" ) )
+    pickle.dump( train_val_test_dict, open( "./data/train_val_test_dict.pkl", "wb" ) )
 
     for i, ID in enumerate(completelist):
 
