@@ -1,0 +1,1 @@
+Otherwise empty directory so that code will work with default directory locations.

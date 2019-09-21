@@ -4,7 +4,7 @@ import numpy as np
 import nibabel as nib
 import pandas as pd
 import os
-from unet_utils import crop_img
+from unet_utils import crop_img, data_dir
 
 def main():
     """
@@ -12,6 +12,7 @@ def main():
     Combines the HGG and LGG data and creates a dictionary of their labels called "tumor_type_dict".
     Creates a train, test, holdout split and stores the train, test, and holdout assignments in a dictionary called "train_val_test_dict".
     """
+
     #%% [markdown]
     # ### Make the labels and test train dictionaries:
 
@@ -50,23 +51,23 @@ def main():
     train_val_test_dict={}
 
     holdout_percentage=0.15
-    train_val_test_dict['holdout']=completelist[0:int(len(completelist)*holdout_percentage)]
+    train_val_test_dict['test']=completelist[0:int(len(completelist)*holdout_percentage)]
     trainlist=completelist[int(len(completelist)*holdout_percentage):len(completelist)]
 
     train_percentage=0.7
     train_val_test_dict['train']=trainlist[0:int(len(trainlist)*train_percentage)]
-    train_val_test_dict['test']=trainlist[int(len(trainlist)*train_percentage):len(trainlist)]
+    train_val_test_dict['val']=trainlist[int(len(trainlist)*train_percentage):len(trainlist)]
 
-    pickle.dump( labels, open( "./data/tumor_type_dict.pkl", "wb" ) )
-    pickle.dump( train_val_test_dict, open( "./data/train_val_test_dict.pkl", "wb" ) )
+    pickle.dump( labels, open( "tumor_type_dict.pkl", "wb" ) )
+    pickle.dump( train_val_test_dict, open( "train_val_test_dict.pkl", "wb" ) )
 
     for i, ID in enumerate(completelist):
 
-        img1 = './data/' + ID + '_flair.nii.gz'
-        img2 = './data/' + ID + '_t1.nii.gz'
-        img3 = './data/' + ID + '_t1ce.nii.gz'
-        img4 = './data/' + ID + '_t2.nii.gz'
-        img5 = './data/' + ID + '_seg.nii.gz'
+        img1 = data_dir / f'{ID}_flair.nii.gz'
+        img2 = data_dir / f'{ID}_t1.nii.gz'
+        img3 = data_dir / f'{ID}_t1ce.nii.gz'
+        img4 = data_dir / f'{ID}_t2.nii.gz'
+        img5 = data_dir / f'{ID}_seg.nii.gz'
 
         newimage = nib.concat_images([img1, img2, img3, img4, img5])
         cropped = crop_img(newimage)         
@@ -102,8 +103,8 @@ def main():
 
     #     X[i,] = images
     #     y1[i,] = seg_mask_3ch
-        pickle.dump( images, open( "./data/%s_images.pkl"%(ID), "wb" ) )
-        pickle.dump( seg_mask_3ch, open( "./data/%s_seg_mask_3ch.pkl"%(ID), "wb" ) )
+        pickle.dump( images, open( data_dir / f"{ID}_images.pkl", "wb" ) )
+        pickle.dump( seg_mask_3ch, open( data_dir / f"{ID}_seg_mask_3ch.pkl", "wb" ) )
         print("Saving", i+1, "of", len(completelist))
 
 if __name__ == "__main__":

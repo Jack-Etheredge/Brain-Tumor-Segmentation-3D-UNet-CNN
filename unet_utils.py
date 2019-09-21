@@ -1,8 +1,29 @@
+from functools import partial
+
+from pathlib import Path
+
 import numpy as np
 import keras
 import nibabel as nib
 from nilearn.image.image import check_niimg
 from nilearn.image.image import _crop_img_to as crop_img_to
+
+from keras.engine import Input, Model
+from keras.layers import Conv3D, MaxPooling3D, UpSampling3D, Activation, BatchNormalization, PReLU, Deconvolution3D, Flatten, Dense, GlobalAveragePooling3D, concatenate, Input, LeakyReLU, Add, UpSampling3D, Activation, SpatialDropout3D
+from keras import backend as K
+
+data_dir = Path("./data/")
+weights_dir = Path("./weights/")
+log_dir = Path("./logs/")
+pred_dir = Path("./predictions/")
+
+def get_project_root() -> Path:
+    """Returns project root folder.
+    Usage: 
+    from unet_utils import get_project_root
+    root = get_project_root()
+    """
+    return Path(__file__).parent.parent
 
 def crop_img(img, rtol=1e-8, copy=True, return_slices=False):
     """Crops img as much as possible
@@ -92,8 +113,8 @@ def get_label_dice_coefficient_function(label_index):
     return f
 
 
-dice_coef = dice_coefficient
-dice_coef_loss = dice_coefficient_loss
+# dice_coef = dice_coefficient
+# dice_coef_loss = dice_coefficient_loss
 
 def create_convolution_block(input_layer, n_filters, batch_normalization=False, kernel=(3, 3, 3), activation=None,
                              padding='same', strides=(1, 1, 1), instance_normalization=False):
@@ -112,7 +133,7 @@ def create_convolution_block(input_layer, n_filters, batch_normalization=False, 
         layer = BatchNormalization(axis=1)(layer)
     elif instance_normalization:
         try:
-            from keras_contrib.layers.normalization import InstanceNormalization
+            from keras_contrib.layers.normalization.instancenormalization import InstanceNormalization
         except ImportError:
             raise ImportError("Install keras_contrib in order to use instance normalization."
                               "\nTry: pip install git+https://www.github.com/farizrahman4u/keras-contrib.git")
@@ -168,8 +189,8 @@ create_convolution_block = partial(create_convolution_block, activation=LeakyReL
 
 class DataGenerator(keras.utils.Sequence):
     'Generates data for Keras'
-    def __init__(self, list_IDs, num_outputs, batch_size=2, dim=(240,240,155), n_channels=4,
-                 n_classes=3, shuffle=True):
+    def __init__(self, list_IDs, batch_size=2, dim=(240,240,155), n_channels=4,
+                 n_classes=3, shuffle=True, num_outputs=3):
         'Initialization'
         self.dim = dim
         self.batch_size = batch_size
@@ -181,31 +202,47 @@ class DataGenerator(keras.utils.Sequence):
         self.on_epoch_end()
         self.num_outputs = num_outputs
 
-    if self.num_outputs == 1:
-        def __len__(self):
-            'Denotes the number of batches per epoch'
-            return int(np.floor(len(self.list_IDs) / self.batch_size))
+    def __len__(self):
+        'Denotes the number of batches per epoch'
+        return int(np.floor(len(self.list_IDs) / self.batch_size))
 
-        def __getitem__(self, index):
-            'Generate one batch of data'
-            # Generate indexes of the batch
-            indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
+    def __getitem__(self, index):
+        'Generate one batch of data'
+        # Generate indexes of the batch
+        indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
 
-            # Find list of IDs
-            list_IDs_temp = [self.list_IDs[k] for k in indexes]
+        # Find list of IDs
+        list_IDs_temp = [self.list_IDs[k] for k in indexes]
 
+        if self.num_outputs == 1:
             # Generate data
             X, y1 = self.__data_generation(list_IDs_temp)
 
             return X, y1
 
-        def on_epoch_end(self):
-            'Updates indexes after each epoch'
-            self.indexes = np.arange(len(self.list_IDs))
-            if self.shuffle == True:
-                np.random.shuffle(self.indexes)
+        if self.num_outputs == 2:
+            # Generate data
+            X, y1, y2 = self.__data_generation(list_IDs_temp)
 
-        def __data_generation(self, list_IDs_temp):
+            return X, [y1, y2]
+
+        if self.num_outputs==3:
+            # Generate data
+            X, y1, y2, y3 = self.__data_generation(list_IDs_temp)
+
+            return X, [y1, y2, y3]                      
+
+    def on_epoch_end(self):
+        'Updates indexes after each epoch'
+        self.indexes = np.arange(len(self.list_IDs))
+        if self.shuffle == True:
+            np.random.shuffle(self.indexes)
+
+    def __data_generation(self, list_IDs_temp):
+
+        data_dir = Path("./data/")
+
+        if self.num_outputs == 1:
             'Generates data containing batch_size samples' # X : (n_samples, *dim, n_channels)
             # Initialization
             X = np.empty((self.batch_size, self.n_channels, *self.dim))
@@ -216,44 +253,22 @@ class DataGenerator(keras.utils.Sequence):
             for i, ID in enumerate(list_IDs_temp):
                 
                 # 1) the "enhancing tumor" (ET), 2) the "tumor core" (TC), and 3) the "whole tumor" (WT) 
-                # The ET is described by areas that show hyper-intensity in T1Gd when compared to T1, but also when compared to “healthy” white matter in T1Gd. The TC describes the bulk of the tumor, which is what is typically resected. The TC entails the ET, as well as the necrotic (fluid-filled) and the non-enhancing (solid) parts of the tumor. The appearance of the necrotic (NCR) and the non-enhancing (NET) tumor core is typically hypo-intense in T1-Gd when compared to T1. The WT describes the complete extent of the disease, as it entails the TC and the peritumoral edema (ED), which is typically depicted by hyper-intense signal in FLAIR.
+                # The ET is described by areas that show hyper-intensity in T1Gd when compared to T1, but also when compared to “healthy” white matter in T1Gd. 
+                # The TC describes the bulk of the tumor, which is what is typically resected. The TC entails the ET, as well as the necrotic (fluid-filled) and the non-enhancing (solid) parts of the tumor. 
+                # The appearance of the necrotic (NCR) and the non-enhancing (NET) tumor core is typically hypo-intense in T1-Gd when compared to T1. 
+                # The WT describes the complete extent of the disease, as it entails the TC and the peritumoral edema (ED), which is typically depicted by hyper-intense signal in FLAIR.
                 # The labels in the provided data are: 
                 # 1 for NCR & NET (necrotic (NCR) and the non-enhancing (NET) tumor core) = TC ("tumor core")
                 # 2 for ED ("peritumoral edema")
                 # 4 for ET ("enhancing tumor")
                 # 0 for everything else
 
-                X[i,] = pickle.load( open( "./data/%s_images.pkl"%(ID), "rb" ) )
-                y1[i,] = pickle.load( open( "./data/%s_seg_mask_3ch.pkl"%(ID), "rb" ) )
+                X[i,] = pickle.load( open( data_dir / f"{ID}_images.pkl", "rb" ) )
+                y1[i,] = pickle.load( open( data_dir / f"{ID}_seg_mask_3ch.pkl", "rb" ) )
                 
-    #         return X, keras.utils.to_categorical(y, num_classes=self.n_classes)
             return X, y1
- 
-    if self.num_outputs == 2:
-        def __len__(self):
-            'Denotes the number of batches per epoch'
-            return int(np.floor(len(self.list_IDs) / self.batch_size))
 
-        def __getitem__(self, index):
-            'Generate one batch of data'
-            # Generate indexes of the batch
-            indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
-
-            # Find list of IDs
-            list_IDs_temp = [self.list_IDs[k] for k in indexes]
-
-            # Generate data
-            X, y1, y2 = self.__data_generation(list_IDs_temp)
-
-            return X, [y1, y2]
-
-        def on_epoch_end(self):
-            'Updates indexes after each epoch'
-            self.indexes = np.arange(len(self.list_IDs))
-            if self.shuffle == True:
-                np.random.shuffle(self.indexes)
-
-        def __data_generation(self, list_IDs_temp):
+        if self.num_outputs == 2:
             'Generates data containing batch_size samples' # X : (n_samples, *dim, n_channels)
             # Initialization
             X = np.empty((self.batch_size, self.n_channels, *self.dim))
@@ -264,47 +279,14 @@ class DataGenerator(keras.utils.Sequence):
             # Generate data
             # Decode and load the data
             for i, ID in enumerate(list_IDs_temp):
-
-                # 1) the "enhancing tumor" (ET), 2) the "tumor core" (TC), and 3) the "whole tumor" (WT) 
-                # The ET is described by areas that show hyper-intensity in T1Gd when compared to T1, but also when compared to “healthy” white matter in T1Gd. The TC describes the bulk of the tumor, which is what is typically resected. The TC entails the ET, as well as the necrotic (fluid-filled) and the non-enhancing (solid) parts of the tumor. The appearance of the necrotic (NCR) and the non-enhancing (NET) tumor core is typically hypo-intense in T1-Gd when compared to T1. The WT describes the complete extent of the disease, as it entails the TC and the peritumoral edema (ED), which is typically depicted by hyper-intense signal in FLAIR.
-                # The labels in the provided data are: 
-                # 1 for NCR & NET (necrotic (NCR) and the non-enhancing (NET) tumor core) = TC ("tumor core")
-                # 2 for ED ("peritumoral edema")
-                # 4 for ET ("enhancing tumor")
-                # 0 for everything else
-
-                X[i,] = pickle.load( open( "./data/%s_images.pkl"%(ID), "rb" ) )
-                y1[i,] = pickle.load( open( "./data/%s_seg_mask_3ch.pkl"%(ID), "rb" ) )
+                X[i,] = pickle.load( open( data_dir / f"{ID}_images.pkl", "rb" ) )
+                y1[i,] = pickle.load( open( data_dir / f"{ID}_seg_mask_3ch.pkl", "rb" ) )
                 y2[i,] = tumor_type_dict[ID]
                 
-    #         return X, keras.utils.to_categorical(y, num_classes=self.n_classes)
             return X, y1, y2
 
-    if self.num_outputs == 3:
-        def __len__(self):
-            'Denotes the number of batches per epoch'
-            return int(np.floor(len(self.list_IDs) / self.batch_size))
 
-        def __getitem__(self, index):
-            'Generate one batch of data'
-            # Generate indexes of the batch
-            indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
-
-            # Find list of IDs
-            list_IDs_temp = [self.list_IDs[k] for k in indexes]
-
-            # Generate data
-            X, y1, y2, y3 = self.__data_generation(list_IDs_temp)
-
-            return X, [y1, y2, y3]
-
-        def on_epoch_end(self):
-            'Updates indexes after each epoch'
-            self.indexes = np.arange(len(self.list_IDs))
-            if self.shuffle == True:
-                np.random.shuffle(self.indexes)
-
-        def __data_generation(self, list_IDs_temp):
+        if self.num_outputs==3:
             'Generates data containing batch_size samples' # X : (n_samples, *dim, n_channels)
             # Initialization
             X = np.empty((self.batch_size, self.n_channels, *self.dim))
@@ -315,17 +297,8 @@ class DataGenerator(keras.utils.Sequence):
             # Generate data
             # Decode and load the data
             for i, ID in enumerate(list_IDs_temp):
-
-                # 1) the "enhancing tumor" (ET), 2) the "tumor core" (TC), and 3) the "whole tumor" (WT) 
-                # The ET is described by areas that show hyper-intensity in T1Gd when compared to T1, but also when compared to “healthy” white matter in T1Gd. The TC describes the bulk of the tumor, which is what is typically resected. The TC entails the ET, as well as the necrotic (fluid-filled) and the non-enhancing (solid) parts of the tumor. The appearance of the necrotic (NCR) and the non-enhancing (NET) tumor core is typically hypo-intense in T1-Gd when compared to T1. The WT describes the complete extent of the disease, as it entails the TC and the peritumoral edema (ED), which is typically depicted by hyper-intense signal in FLAIR.
-                # The labels in the provided data are: 
-                # 1 for NCR & NET (necrotic (NCR) and the non-enhancing (NET) tumor core) = TC ("tumor core")
-                # 2 for ED ("peritumoral edema")
-                # 4 for ET ("enhancing tumor")
-                # 0 for everything else
-
-                X[i,] = pickle.load( open( "./data/%s_images.pkl"%(ID), "rb" ) )
-                y1[i,] = pickle.load( open( "./data/%s_seg_mask_3ch.pkl"%(ID), "rb" ) )            
+                X[i,] = pickle.load( open( data_dir / f"{ID}_images.pkl", "rb" ) )
+                y1[i,] = pickle.load( open( data_dir / f"{ID}_seg_mask_3ch.pkl", "rb" ) )            
                 y2[i,] = tumor_type_dict[ID]
                 y3[i,] = survival_data[survival_data.Brats17ID==ID].Survival.astype(int).values.item(0)
 
@@ -336,19 +309,16 @@ class DataGenerator(keras.utils.Sequence):
 # selected_optimizer = RMSprop
 # selected_initial_learning_rate = 5e-4
 
-
-
 def create_model(input_shape=(4, 160, 192, 160),
     n_base_filters=12,
     depth=5,
     dropout_rate=0.3,
     n_segmentation_levels=3,
     n_labels=3,
+    num_outputs=3,
     optimizer='adam',
     learning_rate=1e-3,
-    activation_name="sigmoid",
-    load_weights_filepath=None,
-    optimizer='adam'):
+    activation_name="sigmoid"):
     """
     This function builds a model proposed by Isensee et al. for the BRATS 2017 competition:
     https://www.cbica.upenn.edu/sbia/Spyridon.Bakas/MICCAI_BraTS/MICCAI_BraTS_2017_proceedings_shortPapers.pdf
@@ -436,13 +406,46 @@ def create_model(input_shape=(4, 160, 192, 160),
     # assign weights and loss as dictionaries
     # functional-api-guide
     # loss_weights define the ratio of how much I care about optimizing each one
+    
+    if num_outputs == 3:
+        model = Model(inputs=inputs, outputs=[activation_block,tumortype_block,survival_block])
+        # model.load_weights(weights_dir / f"model_weights_{num_outputs}_outputs.h5", by_name=True)
 
-    if load_weights_filepath:
-        model.load_weights("./weights/1pred_weights.25--0.08.hdf5", by_name=True) # by_name=True allows you to use a different architecture and bring in the weights from the matching layers 
+        model.compile(optimizer=optimizer, 
+                    loss={'activation_block': weighted_dice_coefficient_loss, 'survival_block': 'mean_squared_error', 'tumortype_block': 'binary_crossentropy'}, 
+                    loss_weights={'activation_block': 1., 'survival_block': 0.2, 'tumortype_block': 0.2},
+                    metrics={'activation_block': ['accuracy', weighted_dice_coefficient, dice_coefficient], 'survival_block': ['accuracy', 'mae'], 'tumortype_block': ['accuracy']})
 
-    model.compile(optimizer=RMSprop(lr=5e-4), 
-                loss={'activation_block': weighted_dice_coefficient_loss}, 
-                loss_weights={'activation_block': 1.},
-                metrics={'activation_block': ['accuracy',weighted_dice_coefficient, dice_coefficient]})
+    if num_outputs == 2:
+        model = Model(inputs=inputs, outputs=[activation_block,tumortype_block])
+        # model.load_weights(weights_dir / f"model_weights_{num_outputs}_outputs.h5", by_name=True) # the by_name=True allows you to use a different architecture and bring in the weights from the matching layers 
 
-    model.summary(line_length=150) # add the parameter that allows me to show everything instead of cutting it off
+        model.compile(optimizer=optimizer, 
+                    loss={'activation_block': weighted_dice_coefficient_loss, 'tumortype_block': 'binary_crossentropy'}, 
+                    loss_weights={'activation_block': 1., 'tumortype_block': 0.2},
+                    metrics={'activation_block': ['accuracy',weighted_dice_coefficient, dice_coefficient], 'tumortype_block': ['accuracy']})
+    
+    if num_outputs == 1:
+        model = Model(inputs=inputs, outputs=[activation_block])
+        # model.load_weights(weights_dir / f"model_weights_{num_outputs}_outputs.h5", by_name=True) # by_name=True allows you to use a different architecture and bring in the weights from the matching layers 
+
+        model.compile(optimizer=optimizer, 
+                    loss={'activation_block': weighted_dice_coefficient_loss}, 
+                    loss_weights={'activation_block': 1.},
+                    metrics={'activation_block': ['accuracy',weighted_dice_coefficient, dice_coefficient]})
+
+    print(model.summary(line_length=150)) # add the parameter that allows me to show everything instead of cutting it off 
+        
+    return model
+
+
+
+    # model.compile(optimizer=RMSprop(lr=5e-4), 
+    #             loss={'activation_block': weighted_dice_coefficient_loss}, 
+    #             loss_weights={'activation_block': 1.},
+    #             metrics={'activation_block': ['accuracy',weighted_dice_coefficient, dice_coefficient]})
+
+    # model.summary(line_length=150) # add the parameter that allows me to show everything instead of cutting it off
+
+    # model.save_weights("./weights/model_3_weights.h5")
+    # print("Saved model to disk")
