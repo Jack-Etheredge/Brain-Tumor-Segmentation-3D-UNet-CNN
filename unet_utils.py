@@ -2,6 +2,10 @@ from functools import partial
 
 from pathlib import Path
 
+import pandas as pd
+
+import pickle
+
 import numpy as np
 import keras
 import nibabel as nib
@@ -194,7 +198,9 @@ class DataGenerator(keras.utils.Sequence):
         'Initialization'
         self.dim = dim
         self.batch_size = batch_size
-        self.labels = labels
+        # self.labels = labels
+        self.tumor_type_dict = pickle.load( open( "tumor_type_dict.pkl", "rb" ) )
+        self.survival_data = pd.read_csv('survival_data.csv')
         self.list_IDs = list_IDs
         self.n_channels = n_channels
         self.n_classes = n_classes
@@ -281,7 +287,7 @@ class DataGenerator(keras.utils.Sequence):
             for i, ID in enumerate(list_IDs_temp):
                 X[i,] = pickle.load( open( data_dir / f"{ID}_images.pkl", "rb" ) )
                 y1[i,] = pickle.load( open( data_dir / f"{ID}_seg_mask_3ch.pkl", "rb" ) )
-                y2[i,] = tumor_type_dict[ID]
+                y2[i,] = self.tumor_type_dict[ID]
                 
             return X, y1, y2
 
@@ -299,8 +305,8 @@ class DataGenerator(keras.utils.Sequence):
             for i, ID in enumerate(list_IDs_temp):
                 X[i,] = pickle.load( open( data_dir / f"{ID}_images.pkl", "rb" ) )
                 y1[i,] = pickle.load( open( data_dir / f"{ID}_seg_mask_3ch.pkl", "rb" ) )            
-                y2[i,] = tumor_type_dict[ID]
-                y3[i,] = survival_data[survival_data.Brats17ID==ID].Survival.astype(int).values.item(0)
+                y2[i,] = self.tumor_type_dict[ID]
+                y3[i,] = self.survival_data[self.survival_data.Brats17ID==ID].Survival.astype(int).values.item(0)
 
             return X, y1, y2, y3
 

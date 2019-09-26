@@ -50,7 +50,11 @@ def main():
         img4 = data_dir / f'{ID}_t2.nii.gz'
         img5 = data_dir / f'{ID}_seg.nii.gz'
 
-        newimage = nib.concat_images([img1, img2, img3, img4, img5])
+        img_list = [str(x) for x in [img1, img2, img3, img4, img5]]
+        newimage = nib.concat_images(img_list)
+        # # nibabel uses .lower on the filepath, which requires the filepath to be string, not the posixpath type from pathlib
+        # newimage = nib.concat_images([img1, img2, img3, img4, img5])
+        
         cropped = crop_img(newimage)
         img_array = np.array(cropped.dataobj)
         z = np.rollaxis(img_array, 3, 0)

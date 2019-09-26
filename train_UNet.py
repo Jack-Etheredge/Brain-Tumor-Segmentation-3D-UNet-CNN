@@ -40,8 +40,8 @@ def train_unet(model, num_outputs, load_weights_filepath=None): # num_outputs, o
     # Callbacks:
     early_stopping_cb = keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=2, mode='auto')
     # cb_2 = keras.callbacks.ModelCheckpoint(filepath="./weights/3pred_weights.{epoch:02d}-{val_loss:.2f}.hdf5", monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=False, mode='auto', period=1)
-    model_checkpoint_cb = keras.callbacks.ModelCheckpoint(filepath= weights_dir / f"model_weights_{num_outputs}_outputs.h5", monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=False, mode='auto', period=1)
-    tensorboard_cb = keras.callbacks.TensorBoard(log_dir= log_dir / "{model_name}", histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None, update_freq='epoch')
+    model_checkpoint_cb = keras.callbacks.ModelCheckpoint(filepath= str(weights_dir / f"model_weights_{num_outputs}_outputs.h5"), monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=False, mode='auto', period=1)
+    tensorboard_cb = keras.callbacks.TensorBoard(log_dir= str(log_dir / f"{model_name}"), histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None, update_freq='epoch')
 
     # Params for generators:
     params = {'dim': (160,192,160),
@@ -51,8 +51,16 @@ def train_unet(model, num_outputs, load_weights_filepath=None): # num_outputs, o
                             'shuffle': True,
                             'num_outputs': num_outputs}
     # Generators:
-    training_generator = DataGenerator(train_val_test_dict['train'], num_outputs, **params)
-    validation_generator = DataGenerator(train_val_test_dict['val'], num_outputs, **params)
+    if num_outputs==3:
+        survival_data_df = pd.read_csv('survival_data.csv')
+        sub_train_val_test_dict = {}
+        sub_train_val_test_dict['train'] = [x for x in train_val_test_dict['val'] if x in set(survival_data_df.Brats17ID)]
+        sub_train_val_test_dict['val'] = [x for x in train_val_test_dict['val'] if x in set(survival_data_df.Brats17ID)]
+        training_generator = DataGenerator(sub_train_val_test_dict['train'], **params)
+        validation_generator = DataGenerator(sub_train_val_test_dict['val'], **params)
+    else:
+        training_generator = DataGenerator(train_val_test_dict['train'], **params)
+        validation_generator = DataGenerator(train_val_test_dict['val'], **params)
 
     # Fit:
     results = model.fit_generator(generator=training_generator,
