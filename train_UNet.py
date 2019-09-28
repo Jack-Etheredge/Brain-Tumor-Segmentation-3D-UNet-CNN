@@ -79,6 +79,7 @@ if __name__ == '__main__':
         dropout_rate=0.3,
         n_segmentation_levels=3,
         n_labels=3,
+        num_outputs=num_outputs,
         optimizer='adam',
         learning_rate=1e-3,
         activation_name="sigmoid")
