@@ -13,6 +13,8 @@ from nilearn.image.image import check_niimg
 from nilearn.image.image import _crop_img_to as crop_img_to
 
 from keras.engine import Input, Model
+from keras.optimizers import Adam, RMSprop, Adadelta, SGD
+from keras.initializers import he_normal
 from keras.layers import Conv3D, MaxPooling3D, UpSampling3D, Activation, BatchNormalization, PReLU, Deconvolution3D, Flatten, Dense, GlobalAveragePooling3D, concatenate, Input, LeakyReLU, Add, UpSampling3D, Activation, SpatialDropout3D
 from keras import backend as K
 
@@ -132,7 +134,7 @@ def create_convolution_block(input_layer, n_filters, batch_normalization=False, 
     :param padding:
     :return:
     """
-    layer = Conv3D(n_filters, kernel, padding=padding, strides=strides)(input_layer)
+    layer = Conv3D(n_filters, kernel, padding=padding, strides=strides, kernel_initializer=he_normal())(input_layer)
     if batch_normalization:
         layer = BatchNormalization(axis=1)(layer)
     elif instance_normalization:
@@ -342,6 +344,10 @@ def create_model(input_shape=(4, 160, 192, 160),
     :param activation_name:
     :return:
     """
+
+    if optimizer.lower() == 'adam':
+        optimizer = Adam(lr=learning_rate)
+
     inputs = Input(input_shape)
 
     current_layer = inputs

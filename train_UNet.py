@@ -40,7 +40,7 @@ def train_unet(model, num_outputs, load_weights_filepath=None): # num_outputs, o
     # Callbacks:
     early_stopping_cb = keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=2, mode='auto')
     # cb_2 = keras.callbacks.ModelCheckpoint(filepath="./weights/3pred_weights.{epoch:02d}-{val_loss:.2f}.hdf5", monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=False, mode='auto', period=1)
-    model_checkpoint_cb = keras.callbacks.ModelCheckpoint(filepath= str(weights_dir / f"model_weights_{num_outputs}_outputs.h5"), monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=False, mode='auto', period=1)
+    model_checkpoint_cb = keras.callbacks.ModelCheckpoint(filepath= str(weights_dir / f"model_weights_{num_outputs}_outputs.h5"), monitor='val_loss', verbose=2, save_best_only=True, save_weights_only=False, mode='auto', period=1)
     tensorboard_cb = keras.callbacks.TensorBoard(log_dir= str(log_dir / f"{model_name}"), histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None, update_freq='epoch')
 
     # Params for generators:
@@ -71,7 +71,7 @@ def train_unet(model, num_outputs, load_weights_filepath=None): # num_outputs, o
 
 if __name__ == '__main__':
     
-    num_outputs = 3
+    num_outputs = 1
 
     model = create_model(input_shape=(4, 160, 192, 160),
         n_base_filters=12,
@@ -81,7 +81,7 @@ if __name__ == '__main__':
         n_labels=3,
         num_outputs=num_outputs,
         optimizer='adam',
-        learning_rate=1e-3,
+        learning_rate=1e-2,
         activation_name="sigmoid")
     
     train_unet(model, num_outputs)
