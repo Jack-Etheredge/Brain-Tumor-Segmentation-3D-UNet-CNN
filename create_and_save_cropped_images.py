@@ -12,14 +12,7 @@ def main():
     Combines the HGG and LGG data and creates a dictionary of their labels called "tumor_type_dict".
     Creates a train, test, holdout split and stores the train, test, and holdout assignments in a dictionary called "train_val_test_dict".
     """
-
-    #%% [markdown]
     # ### Make the labels and test train dictionaries:
-
-    #%%
-
-    # read survival data
-    survival_data = pd.read_csv('survival_data.csv')
 
     # make tumor type dictionary:
     tumor_type_dict = {}
@@ -39,11 +32,14 @@ def main():
             tumor_type_dict[patientID] = 1
 
     # print(len(tumor_type_dict))
-    for patientID in HGG_dir_list+LGG_dir_list:
+
+    completelist = HGG_dir_list + LGG_dir_list
+
+    for patientID in completelist:
         print(tumor_type_dict[patientID])
     # tumor_type_dict[(HGG_dir_list+LGG_dir_list)[0]]
 
-    completelist = HGG_dir_list + LGG_dir_list
+    
     # print(completelist[0:4])
     np.random.shuffle(completelist) # shuffles in place
     # print(completelist[0:4])

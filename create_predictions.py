@@ -12,7 +12,7 @@ from unet_utils import crop_img, weights_dir, data_dir, pred_dir
 def predict_unet(num_outputs):
     train_val_test_dict = pickle.load(open( "train_val_test_dict.pkl", "rb" ) ) # this has the test/train ID matches
 
-    pickle.dump( results.history, open( weights_dir / f"history_{num_outputs}_pred.pkl", "wb" ) )
+#     pickle.dump( results.history, open( weights_dir / f"history_{num_outputs}_pred.pkl", "wb" ) )
 
     params = {'dim': (160,192,160),
         'batch_size': 1,
@@ -28,7 +28,7 @@ def predict_unet(num_outputs):
 
     predictions = model.predict_generator(generator=validation_generator)
 
-    pickle.dump( predictions, open( weights_dir / f"predictions_{num_outputs}_pred.pkl", "wb" ) )
+    pickle.dump( predictions, open( pred_dir / f"predictions_{num_outputs}_pred.pkl", "wb" ) )
 
 
 def main():
