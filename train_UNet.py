@@ -32,7 +32,7 @@ def train_unet(model, num_outputs, load_weights_filepath=None): # num_outputs, o
 
     train_val_test_dict = pickle.load(open( "train_val_test_dict.pkl", "rb" ) ) # this has the test/train ID matches
 
-    model_name = "3dunet_{num_outputs}_outputs"
+    model_name = f"3dunet_{num_outputs}_outputs"
 
     if load_weights_filepath:
         model.load_weights(load_weights_filepath, by_name=True) # by_name=True allows you to use a different architecture and bring in the weights from the matching layers 
@@ -40,7 +40,8 @@ def train_unet(model, num_outputs, load_weights_filepath=None): # num_outputs, o
     # Callbacks:
     early_stopping_cb = keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=2, mode='auto')
     # cb_2 = keras.callbacks.ModelCheckpoint(filepath="./weights/3pred_weights.{epoch:02d}-{val_loss:.2f}.hdf5", monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=False, mode='auto', period=1)
-    model_checkpoint_cb = keras.callbacks.ModelCheckpoint(filepath= str(weights_dir / f"model_weights_{num_outputs}_outputs.h5"), monitor='val_loss', verbose=2, save_best_only=True, save_weights_only=False, mode='auto', period=1)
+    filename = f"model_weights_{num_outputs}_outputs.h5"
+    model_checkpoint_cb = keras.callbacks.ModelCheckpoint(filepath= str(weights_dir / filename), monitor='val_loss', verbose=2, save_best_only=True, save_weights_only=False, mode='auto', period=1)
     tensorboard_cb = keras.callbacks.TensorBoard(log_dir= str(log_dir / f"{model_name}"), histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None, update_freq='epoch')
 
     # Params for generators:
