@@ -7,14 +7,14 @@
 - ~~Separate train val test splitting from image preprocessing~~
 - ~~Try running training file~~
 - ~~Try running again on GPU~~
-- Try creating predictions
-- Try creating tiffs of predictions
+- ~~Try creating predictions~~
+- ~~Try creating tiffs of predictions~~
 - Hyperparameter tuning and cross-validation
 - Finally, train on full dataset
 - Incorporate transfer learning
 - Incorporate other modern refinements
 - Create functions for:
-    - Cropping and saving
+    - ~~Cropping and saving~~
     - Aligning the segmentation back to the original uncropped image
     - Figure out how to reverse the cropping and one-hot encoding to make the output submittable
 
