@@ -1,23 +1,5 @@
 # Brain-Tumor-Segmentation-3D-UNet-CNN
 
-## Refactoring:
-- ~~Add tensorboard callback in addition to early stopping and saving models~~
-- ~~Make it an argument whether you’d like to run with multioutput or not~~
-- ~~Pathlib to support windows pathing~~
-- ~~Separate train val test splitting from image preprocessing~~
-- ~~Try running training file~~
-- ~~Try running again on GPU~~
-- ~~Try creating predictions~~
-- ~~Try creating tiffs of predictions~~
-- Hyperparameter tuning and cross-validation
-- Finally, train on full dataset
-- Incorporate transfer learning
-- Incorporate other modern refinements
-- Create functions for:
-    - ~~Cropping and saving~~
-    - Aligning the segmentation back to the original uncropped image
-    - Figure out how to reverse the cropping and one-hot encoding to make the output submittable
-
 Brain tumor segmentation using a 3D UNet CNN
 
 I used Keras with a Tensorflow backend. This UNet was built for the MICCAI BraTS dataset: https://www.med.upenn.edu/sbia/brats2018/data.html
@@ -61,17 +43,30 @@ My presentation for this work is here: [talk](./Brain_Tumor_Segmentation_Talk.pp
 
 Blog post about this project: https://jack-etheredge.github.io/Brain-tumor-segmentation-with-3D-UNet-CNN/
 
-
-
-To do:
-- Clean code
-- Add alternative versions for 8xGPU
-- Add alternative versions for on-the-fly image cropping versus pulling from pre-cropped pickle files
-
 I heavily modified code from two sources to get this project to work:
 
 - Original code for building the UNet was from this repo: https://github.com/ellisdg/3DUnetCNN
 - Original code for the data generator: https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the-fly.html
+
+## Refactoring:
+- ~~Add tensorboard callback in addition to early stopping and saving models~~
+- ~~Make it an argument whether you’d like to run with multioutput or not~~
+- ~~Pathlib to support windows pathing~~
+- ~~Separate train val test splitting from image preprocessing~~
+- ~~Try running training file~~
+- ~~Try running again on GPU~~
+- ~~Try creating predictions~~
+- ~~Try creating tiffs of predictions~~
+- Hyperparameter tuning and cross-validation
+- Finally, train on full dataset
+- Incorporate transfer learning
+- Incorporate other modern refinements
+- Add options for 8xGPU
+- Add option for on-the-fly image cropping versus pulling from pre-cropped pickle files (currently just maintained the latter)
+- Create functions for:
+    - ~~Cropping and saving~~
+    - Aligning the segmentation back to the original uncropped image
+    - Figure out how to reverse the cropping and one-hot encoding to make the output submittable
 
 [Isensee 2017]: https://arxiv.org/abs/1802.10508
 [BraTS]: https://www.med.upenn.edu/sbia/brats2018/data.html
