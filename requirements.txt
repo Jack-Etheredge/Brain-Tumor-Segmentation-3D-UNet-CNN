@@ -5,3 +5,4 @@ tables>=3.4.2
 nibabel>=2.1.0
 pandas
 git+https://www.github.com/keras-team/keras-contrib.git#egg=keras_contrib
+tifffile

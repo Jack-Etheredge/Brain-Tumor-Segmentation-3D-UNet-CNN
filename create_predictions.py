@@ -3,16 +3,39 @@ import numpy as np
 import copy
 import nibabel as nib
 from tifffile import imsave
-from unet_utils import crop_img, weights_dir, data_dir, pred_dir
+from unet_utils import crop_img, weights_dir, data_dir, pred_dir, DataGenerator, create_model
+from keras.models import load_model
+from keras import backend as K
+from keras.engine import Model
+K.tensorflow_backend.set_image_dim_ordering('tf')
+K.set_image_data_format('channels_first')
 
 # doesn't look like I kept using these:
 # from libtiff import TIFF
 # from skimage.io._plugins import freeimage_plugin as fi
 
-def predict_unet(num_outputs):
+def predict_unet(num_outputs, load_weights_filepath):
     train_val_test_dict = pickle.load(open( "train_val_test_dict.pkl", "rb" ) ) # this has the test/train ID matches
 
 #     pickle.dump( results.history, open( weights_dir / f"history_{num_outputs}_pred.pkl", "wb" ) )
+
+    # This isn't an ideal way to do things. 
+    # I need to find a simpler way around the issue of having custom layers (ValueError: Unknown layer: InstanceNormalization)
+    model = create_model(input_shape=(4, 160, 192, 160),
+        n_base_filters=12,
+        depth=5,
+        dropout_rate=0.3,
+        n_segmentation_levels=3,
+        n_labels=3,
+        num_outputs=num_outputs,
+        optimizer='adam',
+        learning_rate=1e-2,
+        activation_name="sigmoid")
+
+    model.load_weights(load_weights_filepath, by_name=True) # by_name=True allows you to use a different architecture and bring in the weights from the matching layers 
+    
+    # Turned shuffle off so that we can match the values in the dictionary to the predictions. 
+    # This way we can compare the predictions side-by-side with the ground truth.
 
     params = {'dim': (160,192,160),
         'batch_size': 1,
@@ -20,18 +43,19 @@ def predict_unet(num_outputs):
         'n_channels': 4,
         'shuffle': False,
         'num_outputs': num_outputs}
-
-    # Turned shuffle off so that we can match the values in the dictionary to the predictions. 
-    # This way we can compare the predictions side-by-side with the ground truth.
-
-    validation_generator = DataGenerator(train_val_test_dict['test'], num_outputs, **params)
+    validation_generator = DataGenerator(train_val_test_dict['test'], **params)
+ 
+#     # load model
+#     model = load_model(model_path, custom_objects={'InstanceNormalization':unet_utils.InstanceNormalization})
+#     keras_contrib.layers.normalization.instancenormalization import InstanceNormalization
 
     predictions = model.predict_generator(generator=validation_generator)
 
-    pickle.dump( predictions, open( pred_dir / f"predictions_{num_outputs}_pred.pkl", "wb" ) )
+    for i, prediction in enumerate(predictions):
+        pickle.dump( prediction, open( pred_dir / f"predictions_{num_outputs}_pred_{i}.pkl", "wb" ) )
 
 
-def main():
+def create_tiffs_from_predictions(num_outputs):
     train_val_test_dict = pickle.load(open( "train_val_test_dict.pkl", "rb" ) ) # this has the test/train ID matches
 
     # access the test list:
@@ -131,7 +155,7 @@ def main():
         imsave(pred_dir / f"{ID}_ground_truth_2.tif", seg_mask_2, 'imagej')
         imsave(pred_dir / f"{ID}_ground_truth_3.tif", seg_mask_3, 'imagej')
 
-        imarray = pickle.load(open( "./channel_split/prediction_"+str(i)+".pkl", "rb" ) )
+        imarray = pickle.load(open( pred_dir / f"predictions_{num_outputs}_pred_{i}.pkl", "rb" ) )
 
         prediction_thresh = copy.deepcopy(imarray)
         prediction_thresh[prediction_thresh < 0.5] = 0.
@@ -166,4 +190,6 @@ def main():
         #     imsave("./channel_split/"+testIDlist[i]+"ground_truth_3.tif", seg_mask_3, 'imagej')
 
 if __name__ == "__main__":
-        main()
+        num_outputs = 1
+        predict_unet(num_outputs, './weights/model_weights_3_outputs.h5')
+        create_tiffs_from_predictions(num_outputs)
