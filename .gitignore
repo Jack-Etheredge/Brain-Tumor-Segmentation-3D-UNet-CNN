@@ -1,6 +1,6 @@
 # Data files specific to this repo #
 ####################################
-
+*.csv
 
 # Notebook checkpoints #
 ########################

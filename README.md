@@ -1,4 +1,23 @@
 # Brain-Tumor-Segmentation-3D-UNet-CNN
+
+## Refactoring:
+- ~~Add tensorboard callback in addition to early stopping and saving models~~
+- ~~Make it an argument whether you’d like to run with multioutput or not~~
+- ~~Pathlib to support windows pathing~~
+- ~~Separate train val test splitting from image preprocessing~~
+- ~~Try running training file~~
+- ~~Try running again on GPU~~
+- Try creating predictions
+- Try creating tiffs of predictions
+- Hyperparameter tuning and cross-validation
+- Finally, train on full dataset
+- Incorporate transfer learning
+- Incorporate other modern refinements
+- Create functions for:
+    - Cropping and saving
+    - Aligning the segmentation back to the original uncropped image
+    - Figure out how to reverse the cropping and one-hot encoding to make the output submittable
+
 Brain tumor segmentation using a 3D UNet CNN
 
 I used Keras with a Tensorflow backend. This UNet was built for the MICCAI BraTS dataset: https://www.med.upenn.edu/sbia/brats2018/data.html
