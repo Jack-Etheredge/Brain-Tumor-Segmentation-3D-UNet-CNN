@@ -17,7 +17,7 @@ Here is the architecture for the 2D U-Net from the original publication mentione
 ![u-net-architecture](./images/u-net-architecture.png)
 
 There are 3 tumor regions that are being determined in the ground truth and the predictions. From largest to smallest, these are:
-1. Edema^
+1. Edema
 2. Enhancing tumor core
 3. Necrotic tumor core
 
