@@ -21,7 +21,7 @@ There are 3 tumor regions that are being determined in the ground truth and the 
 2. Enhancing tumor core
 3. Necrotic tumor core
 
-The ground truth segmentation comes as a single channel coded 0,1,2,4 for the different regions and 0 as no tumor. I converted this to a 3-channel image with each channel corresponding to a single tumor region prediction of 0 or 1 for each pixel. Correspondingly, I output predictions for for the 3 tumor regions into separate channels with a binary classification for each channel.
+The ground truth segmentation comes as a single channel coded 0,1,2,4 for the different regions and 0 as no tumor. I converted this to a 3-channel image with each channel corresponding to a single tumor region prediction of 0 or 1 for each pixel. Correspondingly, I output predictions for the 3 tumor regions into separate channels with a binary classification for each channel.
 
 Here's an example of the correlation between my predictions in a single 2D plane:
 
